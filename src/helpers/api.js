@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = 'https://note-taking-sigma-six.vercel.app'
+const API_URL = 'https://notetaking-1fu7.onrender.com'
 
 // Create axios instance with error handling and timeout
 const api = axios.create({
