@@ -1,15 +1,22 @@
 {
-  "name": "client",
+  "name": "note-taking-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "vue-cli-service build",
+    "dev": "vue-cli-service serve"
   },
   "dependencies": {
-    "vue": "^3.2.13"
+    "@ckpack/vue-color": "^1.6.0",
+    "axios": "^1.11.0",
+    "date-fns": "^2.30.0",
+    "sweetalert2": "^11.22.2",
+    "vue": "^3.2.13",
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "@vue/cli-service": "~5.0.0"
+    "@vue/cli-service": "~5.0.0",
+    "@vue/compiler-sfc": "^3.2.13"
   }
 }
