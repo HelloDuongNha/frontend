@@ -3,8 +3,8 @@
     <!-- App Logo -->
     <div class="logo-container">
       <router-link to="/home" class="logo">
-        <div class="logo-icon">M</div>
-        <span class="logo-text">MINO</span>
+        <img src="../assets/logo.png" alt="Logo" class="logo-icon white">
+        <span class="logo-text">Note Taking</span>
       </router-link>
     </div>
     
@@ -16,18 +16,33 @@
       </button>
       
       <!-- Add Options Dropdown -->
-      <div v-if="showAddOptions" class="add-options">
-        <button @click="createNew('note')">
-          <i class="bi bi-file-earmark-text me-2"></i> New Note
-        </button>
-        <button @click="createNew('tag')">
-          <i class="bi bi-tag me-2"></i> New Tag
-        </button>
+      <div class="add-options-container">
+        <transition name="dropdown-fade">
+          <div v-show="showAddOptions" class="add-options">
+            <button @click="createNew('note')">
+              <i class="bi bi-file-earmark-text me-2"></i> New Note
+            </button>
+            <button @click="createNew('tag')">
+              <i class="bi bi-tag me-2"></i> New Tag
+            </button>
+          </div>
+        </transition>
       </div>
     </div>
     
     <!-- Navigation Items -->
     <nav class="sidebar-nav">
+      <!-- Admin Only: All Users Link -->
+      <router-link 
+        v-if="isAdmin" 
+        to="/admin/users" 
+        class="nav-item admin-item" 
+        active-class="active"
+      >
+        <span class="nav-icon">👥</span>
+        <span class="nav-text">All Users</span>
+      </router-link>
+      
       <router-link to="/home" class="nav-item" active-class="active">
         <span class="nav-icon">📝</span>
         <span class="nav-text">My Notes</span>
@@ -85,13 +100,15 @@
     <!-- User Info & Logout Section -->
     <div class="user-logout-container">
       <!-- User Info -->
-      <div class="user-info-container">
+      <div class="user-info-container" @click="openProfileModal">
         <div class="user-avatar">
           <span class="avatar-initials">{{ userInitials }}</span>
         </div>
         <div class="user-details">
           <h2 class="user-name">{{ userName }}</h2>
           <p class="user-email">{{ userEmail }}</p>
+          <span v-if="isAdmin" class="badge-admin">Admin</span>
+          <span v-else class="badge-user">User</span>
         </div>
       </div>
       
@@ -101,6 +118,15 @@
         Log Out
       </button>
     </div>
+
+    <!-- User Profile Modal -->
+    <UserProfileModal
+      v-if="showProfileModal"
+      :initialUserName="userName"
+      :initialUserEmail="userEmail"
+      @close="closeProfileModal"
+      @update-profile="handleProfileUpdate"
+    />
   </aside>
 </template>
 
@@ -110,28 +136,38 @@ import { useRouter, useRoute } from 'vue-router'
 import { getTags, createTag, getUserId, logoutUser } from '../helpers/api'
 import { generateRandomColor } from '../helpers/utils'
 import TagForm from './TagForm.vue'
+import UserProfileModal from './UserProfileModal.vue'
 import Swal from 'sweetalert2'
 
 export default {
   name: 'Sidebar',
   components: {
-    TagForm
+    TagForm,
+    UserProfileModal
   },
   emits: ['tag-created', 'tag-updated'],
   setup(props, { emit }) {
     const router = useRouter()
     const route = useRoute()
     
+    // State variables
     const userId = ref(getUserId())
     const showAddOptions = ref(false)
     const tags = ref([])
     const isLoading = ref(false)
     const showTagForm = ref(false)
     const currentTag = ref({})
+    const showProfileModal = ref(false)
     
-    // User information
+    // User information state
     const userName = ref('User')
     const userEmail = ref('user@example.com')
+    const userRole = ref('user')
+    const isAdmin = computed(() => userRole.value === 'admin')
+    
+    /**
+     * Compute user initials from their name for avatar display
+     */
     const userInitials = computed(() => {
       if (!userName.value) return '?'
       return userName.value
@@ -141,10 +177,13 @@ export default {
         .toUpperCase()
     })
     
-    // Get user information from localStorage
+    /**
+     * Load user information from localStorage on component mount
+     */
     onMounted(() => {
       const storedName = localStorage.getItem('userName')
       const storedEmail = localStorage.getItem('userEmail')
+      const storedRole = localStorage.getItem('userRole')
       
       if (storedName) {
         userName.value = storedName
@@ -153,9 +192,16 @@ export default {
       if (storedEmail) {
         userEmail.value = storedEmail
       }
+      
+      if (storedRole) {
+        userRole.value = storedRole
+      }
     })
     
-    // Show success toast
+    /**
+     * Display a success toast notification
+     * @param {string} message - The success message to display
+     */
     const showSuccessAlert = (message) => {
       Swal.fire({
         title: 'Success!',
@@ -175,7 +221,10 @@ export default {
       })
     }
     
-    // Show error toast
+    /**
+     * Display an error toast notification
+     * @param {string} message - The error message to display
+     */
     const showErrorAlert = (message) => {
       Swal.fire({
         title: 'Error!',
@@ -194,6 +243,9 @@ export default {
       })
     }
     
+    /**
+     * Fetch all tags for the current user from the API
+     */
     const fetchTags = async () => {
       try {
         isLoading.value = true
@@ -207,6 +259,10 @@ export default {
       }
     }
     
+    /**
+     * Handle creating a new note or tag from the add menu
+     * @param {string} type - The type of item to create ('note' or 'tag')
+     */
     const createNew = (type) => {
       showAddOptions.value = false
       
@@ -223,7 +279,10 @@ export default {
       }
     }
 
-    // Add this function to handle tag click
+    /**
+     * Handle tag click navigation
+     * @param {string} tagId - The ID of the clicked tag
+     */
     const handleTagClick = (tagId) => {
       // Force navigation even if we're already on the tags page
       if (route.path === `/tags/${tagId}`) {
@@ -239,6 +298,9 @@ export default {
       }
     }
     
+    /**
+     * Open the tag creation form with a new tag template
+     */
     const openTagForm = () => {
       currentTag.value = {
         name: '',
@@ -248,11 +310,18 @@ export default {
       showTagForm.value = true
     }
     
+    /**
+     * Close the tag form modal and reset current tag
+     */
     const closeTagForm = () => {
       showTagForm.value = false
       currentTag.value = {}
     }
     
+    /**
+     * Save a new tag via the API
+     * @param {Object} tagData - The tag data to create
+     */
     const saveTag = async (tagData) => {
       try {
         isLoading.value = true
@@ -291,10 +360,43 @@ export default {
       }
     )
     
+    // Initialize component by fetching tags
     onMounted(() => {
       fetchTags()
     })
 
+    /**
+     * Open the user profile modal
+     */
+    const openProfileModal = () => {
+      showProfileModal.value = true;
+    }
+    
+    /**
+     * Close the user profile modal
+     */
+    const closeProfileModal = () => {
+      showProfileModal.value = false;
+    }
+    
+    /**
+     * Handle profile updates from the UserProfileModal
+     * @param {Object} profileData - Updated user profile data
+     */
+    const handleProfileUpdate = (profileData) => {
+      // Update local state with new profile data
+      if (profileData.name) {
+        userName.value = profileData.name;
+      }
+      
+      if (profileData.email) {
+        userEmail.value = profileData.email;
+      }
+    }
+
+    /**
+     * Handle user logout with confirmation
+     */
     const logout = () => {
       Swal.fire({
         title: 'Are you sure?',
@@ -333,13 +435,20 @@ export default {
       logout,
       userName,
       userEmail,
-      userInitials
+      userRole,
+      isAdmin,
+      userInitials,
+      showProfileModal,
+      openProfileModal,
+      closeProfileModal,
+      handleProfileUpdate
     }
   }
 }
 </script>
 
 <style scoped>
+/* Main sidebar container */
 .sidebar {
   width: 250px;
   height: 100%;
@@ -348,9 +457,10 @@ export default {
   display: flex;
   flex-direction: column;
   padding: 16px;
-  overflow-y: hidden; /* Không cho phép cuộn toàn bộ sidebar */
+  overflow-y: hidden; /* Prevent scrolling of entire sidebar */
 }
 
+/* Logo styling */
 .logo-container {
   margin-bottom: 20px;
   padding: 8px 0;
@@ -366,21 +476,18 @@ export default {
 .logo-icon {
   width: 36px;
   height: 36px;
-  background-color: #121212;
-  color: white;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
   margin-right: 10px;
+  object-fit: cover;
 }
 
 .logo-text {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
+  line-height: 1.2;
 }
 
+/* Add new button */
 .new-button {
   display: flex;
   align-items: center;
@@ -407,28 +514,63 @@ export default {
   align-items: center;
 }
 
+/* Add options dropdown */
+.add-options-container {
+  position: relative;
+  width: 100%;
+}
+
 .add-options {
   background-color: white;
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-md);
-  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  z-index: 10;
+  border: 1px solid var(--border);
+}
+
+/* Dropdown transition animations */
+.dropdown-fade-enter-active, 
+.dropdown-fade-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.dropdown-fade-enter-to,
+.dropdown-fade-leave-from {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .add-options button {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 8px 16px;
+  padding: 10px 16px;
   transition: background-color 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.add-options button:last-child {
+  border-bottom: none;
 }
 
 .add-options button:hover {
-  background-color: #f0f0f0;
+  background-color: #f8f8f8;
 }
 
+/* Main navigation section */
 .sidebar-nav {
   margin: 16px 0;
-  flex-shrink: 0; /* Không cho phép co lại khi không đủ không gian */
+  flex-shrink: 0; /* Prevent shrinking when space is limited */
 }
 
 .nav-item {
@@ -449,12 +591,12 @@ export default {
   font-size: 18px;
 }
 
-/* Phần tags section sẽ được phép cuộn */
+/* Tags section with scrolling */
 .tags-section {
   display: flex;
   flex-direction: column;
-  flex: 1; /* Chiếm phần không gian còn lại */
-  min-height: 0; /* Quan trọng để cho phép flexbox co lại */
+  flex: 1; /* Take remaining vertical space */
+  min-height: 0; /* Important to allow flexbox to shrink */
 }
 
 .section-title {
@@ -464,7 +606,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0; /* Không cho phép co lại */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .add-tag-button {
@@ -485,12 +627,12 @@ export default {
   background-color: #f0f0f0;
 }
 
-/* Chỉ cho phép cuộn danh sách tags */
+/* Allow scrolling only within tags list */
 .tags-list {
-  overflow-y: auto; /* Cho phép cuộn trong phần này */
+  overflow-y: auto; /* Enable scrolling for this section */
   margin-top: 8px;
-  flex-grow: 1; /* Chiếm phần không gian còn lại */
-  padding-right: 5px; /* Thêm padding bên phải để tránh thanh cuộn đè lên nội dung */
+  flex-grow: 1; /* Take remaining space */
+  padding-right: 5px; /* Add padding to prevent scrollbar overlapping content */
 }
 
 .tag-item {
@@ -536,7 +678,7 @@ export default {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
-  flex-shrink: 0; /* Không cho phép co lại */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .user-info-container {
@@ -544,6 +686,13 @@ export default {
   align-items: center;
   padding: 12px 8px;
   margin-bottom: 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.user-info-container:hover {
+  background-color: #f0f0f0;
 }
 
 .user-avatar {
@@ -583,6 +732,39 @@ export default {
   overflow: hidden;
 }
 
+/* Admin/user badges */
+.admin-item {
+  background-color: rgba(139, 92, 246, 0.1);
+  font-weight: 600;
+}
+
+.admin-item:hover, .admin-item.active {
+  background-color: rgba(139, 92, 246, 0.2);
+}
+
+.badge-admin {
+  background-color: #8B5CF6;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 8px;
+  display: inline-block;
+}
+
+.badge-user {
+  background-color: #4CAF50; /* Green for users */
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 8px;
+  display: inline-block;
+}
+
+/* Logout button */
 .logout-button {
   width: 100%;
   background-color: #dc3545;
@@ -610,6 +792,7 @@ export default {
   align-items: center;
 }
 
+/* Responsive adjustments for mobile */
 @media screen and (max-width: 768px) {
   .sidebar {
     width: 100%;

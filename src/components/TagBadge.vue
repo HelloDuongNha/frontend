@@ -10,14 +10,27 @@ import { computed } from 'vue'
 export default {
   name: 'TagBadge',
   props: {
+    /**
+     * Tag object containing name and color properties
+     * @type {Object}
+     * @property {string} name - The display name of the tag
+     * @property {string} color - The color code for the tag background
+     */
     tag: {
       type: Object,
       required: true
     }
   },
   setup(props) {
-    const tagName = computed(() => props.tag.name)
-    const tagColor = computed(() => props.tag.color)
+    /**
+     * Get tag name with fallback if undefined
+     */
+    const tagName = computed(() => props.tag?.name || 'Unnamed')
+    
+    /**
+     * Get tag color with fallback if undefined
+     */
+    const tagColor = computed(() => props.tag?.color || '#e9ecef')
     
     return {
       tagName,
@@ -28,6 +41,7 @@ export default {
 </script>
 
 <style scoped>
+/* Tag styling - displays as a rounded pill shape */
 .tag-badge {
   display: inline-block;
   padding: 2px 8px;

@@ -162,10 +162,10 @@
           <div class="note-view-meta">
             <div class="meta-info">
               <div>
-                Created: {{ formatVietnameseDatetime(viewingNote.createdAt) }}
+                Created: {{ formatLocalDatetime(viewingNote.createdAt) }}
               </div>
               <div v-if="viewingNote.updatedAt && isNoteUpdated(viewingNote)">
-                Updated: {{ formatVietnameseDatetime(viewingNote.updatedAt) }}
+                Updated: {{ formatLocalDatetime(viewingNote.updatedAt) }}
               </div>
             </div>
             
@@ -194,7 +194,7 @@
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
 import { getNotes, createNote, updateNote, deleteNote as apiDeleteNote, moveToTrash, getTags, getUserId, toggleNoteDone, searchNotes } from '../helpers/api'
-import { formatDate, formatVietnameseDatetime } from '../helpers/utils'
+import { formatDate, formatLocalDatetime } from '../helpers/utils'
 import NoteCard from '../components/NoteCard.vue'
 import NoteForm from '../components/NoteForm.vue'
 import TagBadge from '../components/TagBadge.vue'
@@ -209,10 +209,10 @@ export default {
   },
   emits: ['note-created', 'note-updated', 'note-deleted', 'tag-created', 'tag-updated'],
   setup(props, { emit }) {
-    // User ID (would come from auth in real app)
+    // User authentication ID
     const userId = ref(getUserId())
     
-    // Note tabs
+    // Tab navigation for filtering notes by time period
     const currentNoteTab = ref('today')
     const noteTabs = [
       { id: 'today', name: 'Todays' },
@@ -220,13 +220,13 @@ export default {
       { id: 'month', name: 'This Month' }
     ]
     
-    // Search functionality
+    // Search functionality state
     const searchQuery = ref('')
     const searchResults = ref([])
     const isSearchActive = ref(false)
     const searchDebounceTimeout = ref(null)
     
-    // Perform search as user types
+    // Perform search with debouncing to prevent excessive API calls
     const performSearch = () => {
       // Clear previous timeout
       if (searchDebounceTimeout.value) {
@@ -254,20 +254,20 @@ export default {
       }, 300) // 300ms debounce
     }
     
-    // Clear search
+    // Clear search and return to default view
     const clearSearch = () => {
       searchQuery.value = ''
       searchResults.value = []
       isSearchActive.value = false
     }
     
-    // Truncate content for preview
+    // Truncate content for preview displays
     const truncateContent = (content) => {
       if (!content) return ''
       return content.length > 60 ? content.substring(0, 60) + '...' : content
     }
     
-    // Sort options
+    // Sorting options for notes
     const showSortDropdown = ref(false)
     const currentSortOption = ref('newest')
     const sortOptions = [
@@ -277,10 +277,12 @@ export default {
       { id: 'undone', name: 'Undone' }
     ]
     
+    // Toggle sort dropdown visibility
     const toggleSortDropdown = () => {
       showSortDropdown.value = !showSortDropdown.value
     }
     
+    // Select a sorting option and close dropdown
     const selectSortOption = (optionId) => {
       currentSortOption.value = optionId
       showSortDropdown.value = false
@@ -353,17 +355,17 @@ export default {
       });
     }
     
-    // Notes and tags data
+    // Main data storage
     const notes = ref([])
     const tags = ref([])
     const isLoading = ref(false)
     const error = ref(null)
     
-    // Form handling
+    // Form state management
     const showNoteForm = ref(false)
     const currentNote = ref({})
     
-    // View note
+    // Note viewing state
     const showNoteView = ref(false)
     const viewingNote = ref({})
     const viewingNoteTags = computed(() => {
@@ -494,17 +496,17 @@ export default {
         isLoading.value = true;
         error.value = null;
         
-        // Tạo bản sao để tránh tác động đến dữ liệu gốc
+        // Create a copy to avoid affecting original data
         const sanitizedData = { ...noteData };
         
         if (sanitizedData._id) {
           // Update existing note
           const noteId = sanitizedData._id;
           
-          // Tạo bản sao không có _id
+          // Create copy without _id
           const { _id, ...updateData } = sanitizedData;
           
-          // Đảm bảo tags luôn là mảng các ID dạng chuỗi
+          // Ensure tags are always an array of string IDs
           if (Array.isArray(updateData.tags)) {
             updateData.tags = updateData.tags.map(tag => 
               typeof tag === 'object' ? tag._id : String(tag)
@@ -512,42 +514,42 @@ export default {
           }
           
           try {
-            // Gửi request cập nhật
+            // Send update request
             const response = await updateNote(noteId, updateData);
             
-            // Cập nhật trong mảng notes
+            // Update in notes array
             if (response && response.data) {
               const index = notes.value.findIndex(n => n._id === noteId);
               if (index !== -1) {
                 notes.value[index] = response.data;
               }
               
-              // Cập nhật trong searchResults nếu đang tìm kiếm
+              // Update in searchResults if searching
               if (isSearchActive.value) {
                 const searchIndex = searchResults.value.findIndex(n => n._id === noteId);
                 if (searchIndex !== -1) {
-                  // Kiểm tra xem note đã update có còn khớp với kết quả tìm kiếm không
+                  // Check if updated note still matches search query
                   if (response.data.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
                       response.data.content.toLowerCase().includes(searchQuery.value.toLowerCase())) {
                     searchResults.value[searchIndex] = response.data;
                   } else {
-                    // Nếu không còn khớp, xóa khỏi kết quả tìm kiếm
+                    // If no longer matches, remove from search results
                     searchResults.value.splice(searchIndex, 1);
                   }
                 }
               }
               
-              // Thông báo thành công
+              // Show success message
               showSuccessAlert('Note updated successfully!');
               
-              // Đóng form
+              // Close form
               closeNoteForm();
               
-              // Làm mới dữ liệu
+              // Refresh data
               await fetchNotes();
               await fetchTags();
               
-              // Gửi sự kiện
+              // Send event
               emit('note-updated', response.data);
             } else {
               throw new Error('Invalid response from server');
@@ -563,7 +565,7 @@ export default {
             userId: userId.value
           };
           
-          // Đảm bảo tags luôn là mảng các ID dạng chuỗi
+          // Ensure tags are always an array of string IDs
           if (Array.isArray(createData.tags)) {
             createData.tags = createData.tags.map(tag => 
               typeof tag === 'object' ? tag._id : String(tag)
@@ -571,24 +573,24 @@ export default {
           }
           
           try {
-            // Gửi request tạo mới
+            // Send create request
             const response = await createNote(createData);
             
             if (response && response.data) {
-              // Thêm vào mảng notes
+              // Add to notes array
               notes.value.unshift(response.data);
               
-              // Thông báo thành công
+              // Show success message
               showSuccessAlert('Note created successfully!');
               
-              // Đóng form
+              // Close form
               closeNoteForm();
               
-              // Làm mới dữ liệu
+              // Refresh data
               await fetchNotes();
               await fetchTags();
               
-              // Gửi sự kiện
+              // Send event
               emit('note-created', response.data);
             } else {
               throw new Error('Invalid response from server');
@@ -603,11 +605,11 @@ export default {
       } catch (err) {
         console.error('General error in saveNote:', err);
         isLoading.value = false;
-        // Không đóng form khi có lỗi chung
+        // Don't close form on general errors
       }
     }
     
-    // Delete a note (now used for permanent deletion)
+    // Delete a note permanently
     const deleteNote = async (noteId) => {
       try {
         isLoading.value = true;
@@ -819,7 +821,7 @@ export default {
       viewingNote,
       viewingNoteTags,
       formatDate,
-      formatVietnameseDatetime,
+      formatLocalDatetime,
       openNewNoteForm,
       editNote,
       deleteNote,

@@ -186,6 +186,7 @@ export default {
   name: 'TrashView',
   
   setup() {
+    // State management
     const userId = ref(getUserId())
     const trashedNotes = ref([])
     const isLoading = ref(false)
@@ -229,13 +230,7 @@ export default {
       return date.toLocaleDateString(undefined, options)
     }
 
-    // Truncate content for suggestions
-    const truncateContent = (content, maxLength = 50) => {
-      if (content.length <= maxLength) return content
-      return content.substring(0, maxLength) + '...'
-    }
-
-    // Handle search input with live results
+    // Handle search input with debounce for API calls
     const performSearch = () => {
       // Clear previous timeout
       if (searchDebounceTimeout.value) {
@@ -253,7 +248,7 @@ export default {
       searchDebounceTimeout.value = setTimeout(async () => {
         try {
           isSearchActive.value = true
-          // Sử dụng userId hiện tại để chỉ tìm kiếm ghi chú của người dùng hiện tại
+          // Use current user ID to only search notes for the current user
           const response = await searchTrashedNotes(searchQuery.value, userId.value)
           searchResults.value = response.data
         } catch (err) {
@@ -264,11 +259,11 @@ export default {
       }, 300) // 300ms debounce
     }
     
-    // Load trashed notes
+    // Load trashed notes from API
     const loadTrashedNotes = async () => {
       isLoading.value = true
       try {
-        // Lấy ID người dùng mới nhất để đảm bảo luôn sử dụng ID hiện tại
+        // Get latest user ID to ensure we're using the current ID
         const currentUserId = getUserId()
         userId.value = currentUserId
         
@@ -282,7 +277,7 @@ export default {
       }
     }
     
-    // Show success alert
+    // Show success alert notification
     const showSuccessAlert = (message) => {
       Swal.fire({
         title: 'Success!',
@@ -297,7 +292,7 @@ export default {
       })
     }
     
-    // Show error alert
+    // Show error alert notification
     const showErrorAlert = (message) => {
       Swal.fire({
         title: 'Error!',
@@ -311,7 +306,7 @@ export default {
       })
     }
     
-    // Handle restore note
+    // Show restore confirmation and handle note restoration
     const handleRestore = (note) => {
       Swal.fire({
         title: 'Restore Note',
@@ -344,7 +339,7 @@ export default {
       })
     }
     
-    // Handle permanent delete
+    // Show delete confirmation and handle permanent deletion
     const handleDelete = (note) => {
       Swal.fire({
         title: 'Delete Permanently',
@@ -377,7 +372,7 @@ export default {
       })
     }
     
-    // Confirm restore all
+    // Show confirmation dialog for restoring all notes
     const confirmRestoreAll = () => {
       if (trashedNotes.value.length === 0) return
       
@@ -429,7 +424,7 @@ export default {
       }
     }
     
-    // Confirm delete all
+    // Show confirmation dialog for deleting all notes
     const confirmDeleteAll = () => {
       if (trashedNotes.value.length === 0) return
       
@@ -449,7 +444,7 @@ export default {
       })
     }
     
-    // Delete all trashed notes
+    // Permanently delete all trashed notes
     const deleteAllNotes = async () => {
       if (trashedNotes.value.length === 0) return
       
@@ -481,20 +476,16 @@ export default {
       }
     }
 
-    // Clear search
+    // Clear search and reset results
     const clearSearch = () => {
       searchQuery.value = ''
       searchResults.value = []
       isSearchActive.value = false
     }
     
+    // Initialize component
     onMounted(() => {
       loadTrashedNotes()
-      
-      // Return cleanup function
-      return () => {
-        // No specific cleanup needed for search debounce timeout
-      }
     })
     
     return {
@@ -510,7 +501,6 @@ export default {
       handleDelete,
       confirmRestoreAll,
       confirmDeleteAll,
-      truncateContent,
       clearSearch
     }
   }
@@ -640,7 +630,7 @@ export default {
   padding: 3px 8px;
   border-radius: 12px;
   font-size: 0.75rem;
-  color: white;
+  color: black;
   margin-right: 5px;
 }
 

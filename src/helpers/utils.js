@@ -14,22 +14,22 @@ export const formatDate = (date) => {
 }
 
 /**
- * Format a date to display in Vietnamese DD/MM/YYYY format
+ * Format a date to display in DD/MM/YYYY format
  * @param {string|Date} date - The date to format
  * @returns {string} Formatted date string in DD/MM/YYYY format
  */
-export const formatVietnameseDate = (date) => {
+export const formatLocalDate = (date) => {
   if (!date) return ''
   const dateObj = new Date(date)
   return dateObj.toLocaleDateString('vi-VN')
 }
 
 /**
- * Format a date and time in Vietnamese format HH:mm DD/MM/YYYY 
+ * Format a date and time in HH:mm DD/MM/YYYY format
  * @param {string|Date} date - The date to format
  * @returns {string} Formatted datetime string
  */
-export const formatVietnameseDatetime = (date) => {
+export const formatLocalDatetime = (date) => {
   if (!date) return ''
   const dateObj = new Date(date)
   const timeStr = dateObj.toLocaleTimeString('vi-VN', {

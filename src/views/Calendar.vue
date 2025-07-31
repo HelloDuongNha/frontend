@@ -30,7 +30,8 @@
             'calendar-day', 
             { 'current-month': day.currentMonth },
             { 'today': day.isToday },
-            { 'has-notes': day.notes.length > 0 }
+            { 'has-notes': day.notes.length > 0 },
+            { 'selected': isSelectedDay(day) }
           ]"
           @click="selectDay(day)"
         >
@@ -50,6 +51,7 @@
           v-for="note in selectedDay.notes" 
           :key="note.id"
           :note="note"
+          :allTags="tags"
         />
       </div>
     </div>
@@ -58,7 +60,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { getNotes } from '../helpers/api'
+import { getNotes, getTags } from '../helpers/api'
 import NoteCard from '../components/NoteCard.vue'
 
 export default {
@@ -67,12 +69,16 @@ export default {
     NoteCard
   },
   setup() {
+    // State management
     const currentDate = ref(new Date())
     const selectedDay = ref(null)
     const notes = ref([])
+    const tags = ref([])
     
+    // Days of week header labels
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     
+    // Format current month and year for display
     const currentMonthDisplay = computed(() => {
       return currentDate.value.toLocaleDateString('en-US', {
         month: 'long',
@@ -80,9 +86,11 @@ export default {
       })
     })
     
+    // Format selected day for display
     const selectedDayDisplay = computed(() => {
       if (!selectedDay.value) return ''
       
+      // Create date object from selected day and current month/year
       const date = new Date(
         currentDate.value.getFullYear(),
         currentDate.value.getMonth(),
@@ -96,39 +104,41 @@ export default {
       })
     })
     
+    // Generate calendar days grid for current month view
     const calendarDays = computed(() => {
       const year = currentDate.value.getFullYear()
       const month = currentDate.value.getMonth()
       
-      // Get first day of the month
+      // Get first day of the month and total days in month
       const firstDayOfMonth = new Date(year, month, 1)
       const daysInMonth = new Date(year, month + 1, 0).getDate()
       
-      // Days from previous month to display
+      // Determine day of week for first day (0 = Sunday)
       const dayOfWeek = firstDayOfMonth.getDay()
       
       const days = []
       
-      // Add days from previous month
+      // Add days from previous month to fill first week
       const prevMonthDays = new Date(year, month, 0).getDate()
       for (let i = dayOfWeek - 1; i >= 0; i--) {
         days.push({
           date: prevMonthDays - i,
           currentMonth: false,
           isToday: false,
-          notes: [] // Would get notes for this date in a real app
+          notes: [] // Empty for previous month days
         })
       }
       
-      // Add days from current month
+      // Add days from current month with notes
       const today = new Date()
       for (let i = 1; i <= daysInMonth; i++) {
+        // Check if this day is today
         const isToday = 
           today.getDate() === i && 
           today.getMonth() === month &&
           today.getFullYear() === year
           
-        // Filter notes for this day
+        // Find notes created on this day
         const dayNotes = notes.value.filter(note => {
           const noteDate = new Date(note.createdAt)
           return (
@@ -146,44 +156,55 @@ export default {
         })
       }
       
-      // Add days from next month to fill calendar grid (6 rows of 7 days)
+      // Add days from next month to complete the grid (6 rows of 7 days)
       const remainingDays = 42 - days.length
       for (let i = 1; i <= remainingDays; i++) {
         days.push({
           date: i,
           currentMonth: false,
           isToday: false,
-          notes: [] // Would get notes for this date in a real app
+          notes: [] // Empty for next month days
         })
       }
       
       return days
     })
     
+    // Navigate to previous month
     const previousMonth = () => {
       currentDate.value = new Date(
         currentDate.value.getFullYear(),
         currentDate.value.getMonth() - 1,
         1
       )
-      selectedDay.value = null
+      selectedDay.value = null // Clear selection when changing months
     }
     
+    // Navigate to next month
     const nextMonth = () => {
       currentDate.value = new Date(
         currentDate.value.getFullYear(),
         currentDate.value.getMonth() + 1,
         1
       )
-      selectedDay.value = null
+      selectedDay.value = null // Clear selection when changing months
     }
     
+    // Select a day in the calendar
     const selectDay = (day) => {
       if (day.currentMonth) {
         selectedDay.value = day
       }
     }
+
+    // Check if a day is currently selected
+    const isSelectedDay = (day) => {
+      return selectedDay.value && 
+             day.date === selectedDay.value.date && 
+             day.currentMonth === selectedDay.value.currentMonth
+    }
     
+    // Fetch notes from API or use fallback data
     const fetchNotes = async () => {
       try {
         const response = await getNotes()
@@ -212,8 +233,21 @@ export default {
       }
     }
     
+    // Fetch tags for note rendering
+    const fetchTags = async () => {
+      try {
+        const response = await getTags()
+        tags.value = response.data || []
+      } catch (error) {
+        console.error('Error fetching tags:', error)
+        tags.value = [] // Default empty array
+      }
+    }
+    
+    // Initialize data when component mounts
     onMounted(() => {
       fetchNotes()
+      fetchTags()
     })
     
     return {
@@ -225,7 +259,9 @@ export default {
       selectedDayDisplay,
       previousMonth,
       nextMonth,
-      selectDay
+      selectDay,
+      isSelectedDay,
+      tags
     }
   }
 }
@@ -276,6 +312,8 @@ export default {
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   margin-bottom: 24px;
+  width: 100%;
+  position: relative;
 }
 
 .calendar-header {
@@ -305,6 +343,11 @@ export default {
   position: relative;
   background-color: #f5f5f5;
   cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.calendar-day:hover:not(.today) {
+  background-color: rgba(0, 0, 128, 0.1); /* Light navy blue for hover */
 }
 
 .calendar-day:nth-child(7n) {
@@ -317,6 +360,10 @@ export default {
 
 .calendar-day.today {
   background-color: #e6f7ff;
+}
+
+.calendar-day.selected:not(.today) {
+  background-color: rgba(0, 0, 128, 0.2); /* Slightly darker navy blue for selected */
 }
 
 .day-number {

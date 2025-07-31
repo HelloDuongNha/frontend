@@ -87,10 +87,10 @@
           <div class="note-view-meta">
             <div class="meta-info">
               <div>
-                Created: {{ formatVietnameseDatetime(viewingNote.createdAt) }}
+                Created: {{ formatLocalDatetime(viewingNote.createdAt) }}
               </div>
               <div v-if="viewingNote.updatedAt && isNoteUpdated(viewingNote)">
-                Updated: {{ formatVietnameseDatetime(viewingNote.updatedAt) }}
+                Updated: {{ formatLocalDatetime(viewingNote.updatedAt) }}
               </div>
             </div>
             
@@ -119,8 +119,8 @@
 <script>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router'
-import { getNotes, getTagById, createNote, updateNote, moveToTrash, getNotesByTag, getUserId, toggleNoteDone } from '../helpers/api'
-import { formatVietnameseDatetime } from '../helpers/utils'
+import { getTagById, createNote, updateNote, moveToTrash, getNotesByTag, getUserId, toggleNoteDone } from '../helpers/api'
+import { formatLocalDatetime } from '../helpers/utils'
 import NoteCard from '../components/NoteCard.vue'
 import NoteForm from '../components/NoteForm.vue'
 import TagBadge from '../components/TagBadge.vue'
@@ -138,19 +138,20 @@ export default {
     const route = useRoute()
     let tagId = route.params.id
     
+    // User authentication and state variables
     const userId = ref(getUserId())
     const tag = ref(null)
     const notes = ref([])
     const isLoading = ref(false)
     const error = ref(null)
     
-    // Note viewing/editing
+    // Note viewing/editing state
     const showNoteForm = ref(false)
     const currentNote = ref({})
     const showNoteView = ref(false)
     const viewingNote = ref({})
     
-    // Show success notification
+    // Show success notification toast
     const showSuccessAlert = (message) => {
       Swal.fire({
         title: 'Success!',
@@ -165,7 +166,7 @@ export default {
       })
     }
     
-    // Show error notification
+    // Show error notification toast
     const showErrorAlert = (message) => {
       Swal.fire({
         title: 'Error!',
@@ -179,6 +180,7 @@ export default {
       })
     }
     
+    // Fetch tag details and associated notes
     const fetchTagAndNotes = async () => {
       if (!tagId) return
       
@@ -207,12 +209,12 @@ export default {
       }
     }
     
-    // Go back to the previous page
+    // Navigate back to tags list
     const goBack = () => {
       router.push('/tags')
     }
     
-    // Create a new note with this tag
+    // Initialize new note with current tag pre-selected
     const createNewNote = () => {
       currentNote.value = {
         title: '',
@@ -223,25 +225,25 @@ export default {
       showNoteForm.value = true
     }
     
-    // Open the note editor
+    // Open the note editor with selected note data
     const editNote = (note) => {
       currentNote.value = { ...note }
       showNoteForm.value = true
     }
     
-    // View a note
+    // Open note details view
     const viewNote = (note) => {
       viewingNote.value = { ...note }
       showNoteView.value = true
     }
     
-    // Close note view
+    // Close note view modal
     const closeNoteView = () => {
       showNoteView.value = false
       viewingNote.value = {}
     }
     
-    // Close note form
+    // Close note form modal
     const closeNoteForm = () => {
       showNoteForm.value = false
       currentNote.value = {}
@@ -272,7 +274,7 @@ export default {
       }
     }
     
-    // Move note to trash
+    // Move note to trash (soft delete)
     const moveNoteToTrash = async (noteId) => {
       try {
         isLoading.value = true
@@ -289,7 +291,7 @@ export default {
       }
     }
     
-    // Check if note has been updated
+    // Check if note has been updated (more than 1 minute after creation)
     const isNoteUpdated = (note) => {
       if (!note.createdAt || !note.updatedAt) return false
       
@@ -299,6 +301,7 @@ export default {
       return updatedAt > createdAt + 60000 // 1 minute difference
     }
 
+    // Sort notes: not done first, then by update date
     const sortedNotes = computed(() => {
       return [...notes.value].sort((a, b) => {
         // Sort: not done first, then done
@@ -310,7 +313,7 @@ export default {
       })
     })
 
-    // Toggle note done status
+    // Toggle note completion status
     const toggleNoteDoneStatus = async (note) => {
       try {
         isLoading.value = true
@@ -334,7 +337,7 @@ export default {
       }
     }
 
-    // Toggle done status of the viewing note
+    // Toggle completion status of the currently viewing note
     const toggleViewingNoteDone = async (event) => {
       try {
         const newDoneStatus = event.target.checked
@@ -357,7 +360,7 @@ export default {
       }
     }
     
-    // Listen for global events to refresh the tag notes
+    // Setup event listeners for refreshing tag notes
     const listenForGlobalEvents = () => {
       const handleRefresh = (event) => {
         if (event.detail?.tagId === tagId) {
@@ -394,6 +397,7 @@ export default {
       return cleanup
     })
 
+    // Handle route updates for tag ID changes
     onBeforeRouteUpdate((to, from) => {
       if (to.params.id !== from.params.id) {
         // Update the local tagId ref
@@ -426,7 +430,7 @@ export default {
       toggleViewingNoteDone,
       isNoteUpdated,
       fetchTagAndNotes,
-      formatVietnameseDatetime
+      formatLocalDatetime
     }
   }
 }

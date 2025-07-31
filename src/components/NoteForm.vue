@@ -110,12 +110,16 @@ export default {
   },
   emits: ['submit', 'cancel', 'tag-created'],
   setup(props, { emit }) {
+    // State management
     const tags = ref([])
     const isLoading = ref(false)
     const showTagForm = ref(false)
     const isEditing = computed(() => !!props.note._id)
     
-    // Create reactive form data and ensure tags is always an array of IDs
+    /**
+     * Create reactive form data and ensure tags is always an array of IDs
+     * Handles both tag objects and tag ID strings consistently
+     */
     const formData = reactive({
       title: props.note.title || '',
       content: props.note.content || '',
@@ -126,12 +130,17 @@ export default {
       userId: props.userId
     })
     
-    // Form validation
+    /**
+     * Form validation to ensure required fields are filled
+     */
     const isFormValid = computed(() => {
       return formData.title.trim() !== '' && formData.content.trim() !== '';
     })
     
-    // Show success toast
+    /**
+     * Display a success toast notification
+     * @param {string} message - The success message to display
+     */
     const showSuccessAlert = (message) => {
       Swal.fire({
         title: 'Success!',
@@ -151,7 +160,9 @@ export default {
       })
     }
     
-    // Fetch all available tags
+    /**
+     * Fetch all available tags for the current user
+     */
     const fetchTags = async () => {
       try {
         isLoading.value = true
@@ -164,7 +175,11 @@ export default {
       }
     }
     
-    // Check if a tag is selected
+    /**
+     * Check if a specific tag is selected in the current form
+     * @param {string} tagId - The ID of the tag to check
+     * @returns {boolean} - Whether the tag is selected
+     */
     const isTagSelected = (tagId) => {
       if (!formData.tags || !Array.isArray(formData.tags)) return false
       const stringTagId = String(tagId)
@@ -173,7 +188,10 @@ export default {
       )
     }
     
-    // Toggle tag selection
+    /**
+     * Toggle the selection state of a tag
+     * @param {string} tagId - The ID of the tag to toggle
+     */
     const toggleTag = (tagId) => {
       const stringTagId = String(tagId)
       if (isTagSelected(stringTagId)) {
@@ -186,7 +204,11 @@ export default {
       }
     }
     
-    // Handle new tag creation
+    /**
+     * Handle newly created tags
+     * Creates the tag via API, adds it to the list, and selects it
+     * @param {Object} tagData - The tag data to create
+     */
     const handleTagCreated = async (tagData) => {
       try {
         const response = await createTag(tagData)
@@ -220,7 +242,10 @@ export default {
       }
     }
     
-    // Submit the form
+    /**
+     * Submit the form data to parent component
+     * Sanitizes and validates data before submission
+     */
     const submitForm = () => {
       if (!isFormValid.value) return;
       
@@ -234,19 +259,21 @@ export default {
           _id: props.note._id // Include note ID if editing
         };
         
-        // Gửi dữ liệu lên parent component và để parent xử lý API
+        // Send data to parent component to handle API
         emit('submit', sanitizedData);
         
-        // Lưu ý: KHÔNG đóng form ở đây
-        // Form sẽ được đóng bởi component cha (Home.vue) sau khi API thành công
+        // Note: Form will be closed by parent component (Home.vue) after successful API call
       } catch (err) {
         console.error("Error preparing form data:", err);
       }
     }
     
-    // Cancel and close the form
+    /**
+     * Handle form cancellation with unsaved changes confirmation
+     * Prompts user to confirm if there are unsaved changes
+     */
     const cancel = () => {
-      // Hiển thị thông báo xác nhận nếu người dùng đã sửa form
+      // Show confirmation dialog if user has modified the form
       const hasChanges = 
         formData.title !== (props.note.title || '') ||
         formData.content !== (props.note.content || '') ||
@@ -295,19 +322,8 @@ export default {
 </script>
 
 <style scoped>
-.note-form-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
+/* Modal overlay - this covers the entire screen */
+.note-form-wrapper,
 .note-form-overlay {
   position: fixed;
   top: 0;
@@ -321,6 +337,7 @@ export default {
   z-index: 1000;
 }
 
+/* Form container */
 .note-form-container {
   background-color: white;
   border-radius: var(--radius-md);
@@ -331,6 +348,7 @@ export default {
   overflow-y: auto;
 }
 
+/* Form header */
 .note-form-header {
   display: flex;
   justify-content: space-between;
@@ -351,6 +369,7 @@ export default {
   cursor: pointer;
 }
 
+/* Main form styling */
 .note-form {
   padding: 20px;
 }
@@ -365,6 +384,7 @@ export default {
   font-weight: 500;
 }
 
+/* Checkbox styling */
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -375,6 +395,7 @@ export default {
   margin-left: 8px;
 }
 
+/* Tags section styling */
 .tags-header {
   display: flex;
   justify-content: space-between;
@@ -432,6 +453,7 @@ export default {
   font-style: italic;
 }
 
+/* Form input styling */
 input[type="text"], textarea {
   width: 100%;
   padding: 10px 12px;
@@ -444,6 +466,7 @@ textarea {
   resize: vertical;
 }
 
+/* Form action buttons */
 .form-actions {
   display: flex;
   justify-content: flex-end;

@@ -2,7 +2,7 @@
   <div class="note-card" :class="{ 'done': note.done }" :style="{ backgroundColor: note.color || '#fff' }">
     <div class="note-header">
       <h3 class="note-title">{{ note.title }}</h3>
-      <div class="note-actions">
+      <div class="note-actions" v-if="!readOnly">
         <div class="action-menu" v-if="showActions">
           <button @click.stop="onEdit" class="menu-item">Edit</button>
           <button 
@@ -41,7 +41,7 @@
 
 <script>
 import { computed, ref } from 'vue'
-import { formatTime, truncateText, formatVietnameseDate, formatVietnameseDatetime } from '../helpers/utils'
+import { formatTime, truncateText, formatLocalDate, formatLocalDatetime } from '../helpers/utils'
 import TagBadge from './TagBadge.vue'
 import Swal from 'sweetalert2'
 
@@ -58,29 +58,42 @@ export default {
     allTags: {
       type: Array,
       default: () => []
+    },
+    readOnly: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['edit', 'delete', 'trash', 'toggle-done'],
   setup(props, { emit }) {
+    // Controls the visibility of action menu
     const showActions = ref(false)
     
+    // Format note content with ellipsis if too long
     const truncatedContent = computed(() => {
       return truncateText(props.note.content, 50)
     })
     
+    // Format the creation time of the note
     const formattedTime = computed(() => {
       return formatTime(props.note.createdAt)
     })
     
+    // Format the creation date of the note
     const formattedDate = computed(() => {
-      return formatVietnameseDate(props.note.createdAt)
+      return formatLocalDate(props.note.createdAt)
     })
     
+    // Format the last update date and time of the note
     const formattedUpdatedAt = computed(() => {
-      return formatVietnameseDatetime(props.note.updatedAt)
+      return formatLocalDatetime(props.note.updatedAt)
     })
     
-    // Check if the note has been updated after creation
+    /**
+     * Check if the note has been updated after creation
+     * Only shows as updated if more than 1 minute has passed
+     * between creation and update times
+     */
     const isNoteUpdated = computed(() => {
       if (!props.note.createdAt || !props.note.updatedAt) return false
       
@@ -91,7 +104,10 @@ export default {
       return updatedAt > createdAt + 60000
     })
     
-    // Find tag objects that match IDs in the note's tags array
+    /**
+     * Find tag objects that match IDs in the note's tags array
+     * Handles both object tags and string ID references
+     */
     const noteTags = computed(() => {
       // If there are no tags in the note or no tags fetched, return empty array
       if (!props.note.tags || !Array.isArray(props.note.tags) || !props.allTags || !props.allTags.length) {
@@ -104,23 +120,33 @@ export default {
       )
       
       // Match each tag in allTags if its ID is in the note's tags array
-      const matchedTags = props.allTags.filter(tag => 
+      return props.allTags.filter(tag => 
         noteTagIds.includes(tag._id) || noteTagIds.includes(String(tag._id))
       )
-      
-      return matchedTags
     })
     
+    /**
+     * Handle note edit action
+     * Emits the edit event with the current note and closes action menu
+     */
     const onEdit = () => {
       emit('edit', props.note)
       showActions.value = false
     }
     
+    /**
+     * Toggle the done status of the note
+     * Emits the toggle-done event with the current note and closes action menu
+     */
     const toggleDoneStatus = () => {
       emit('toggle-done', props.note)
       showActions.value = false
     }
     
+    /**
+     * Show confirmation dialog before deleting a note
+     * If confirmed, emits the trash event with the note ID
+     */
     const confirmDelete = () => {
       Swal.fire({
         title: 'Move to Trash?',
@@ -157,6 +183,7 @@ export default {
 </script>
 
 <style scoped>
+/* Main card container */
 .note-card {
   border-radius: var(--radius-md);
   background-color: var(--background-alt);
@@ -170,15 +197,18 @@ export default {
   position: relative;
 }
 
+/* Hover effect for cards */
 .note-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
 }
 
+/* Style for completed notes */
 .note-card.done {
   opacity: 0.7;
 }
 
+/* Checkmark indicator for completed notes */
 .note-card.done::after {
   content: '✓';
   position: absolute;
@@ -195,6 +225,7 @@ export default {
   font-weight: bold;
 }
 
+/* Header section with title and actions */
 .note-header {
   display: flex;
   justify-content: space-between;
@@ -208,10 +239,12 @@ export default {
   margin: 0;
 }
 
+/* Action menu container */
 .note-actions {
   position: relative;
 }
 
+/* Three-dot menu button */
 .action-button {
   width: 24px;
   height: 24px;
@@ -227,6 +260,7 @@ export default {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
+/* Dropdown menu for actions */
 .action-menu {
   position: absolute;
   top: 100%;
@@ -239,6 +273,7 @@ export default {
   overflow: hidden;
 }
 
+/* Individual menu items */
 .menu-item {
   display: block;
   width: 100%;
@@ -254,6 +289,7 @@ export default {
   background-color: #f5f5f5;
 }
 
+/* Toggle completion status button */
 .menu-item.done-toggle {
   color: #28a745;
 }
@@ -262,6 +298,7 @@ export default {
   background-color: #e8f5e9;
 }
 
+/* Delete button */
 .menu-item.delete {
   color: #f44336;
 }
@@ -270,6 +307,7 @@ export default {
   background-color: #ffebee;
 }
 
+/* Note content area */
 .note-content {
   flex: 1;
   font-size: 14px;
@@ -281,12 +319,14 @@ export default {
   -webkit-box-orient: vertical;
 }
 
+/* Tags container */
 .note-tags {
   display: flex;
   flex-wrap: wrap;
   margin: 8px 0;
 }
 
+/* Footer with date/time information */
 .note-footer {
   display: flex;
   justify-content: space-between;

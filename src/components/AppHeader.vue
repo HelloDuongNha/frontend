@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 export default {
@@ -16,13 +16,14 @@ export default {
   setup() {
     const route = useRoute()
     
-    // Derive page title from route
+    // Compute page title based on current route name
     const pageTitle = computed(() => {
       const routeName = route.name
+      // Default to 'MY NOTES' if route is home or undefined
       if (routeName === 'Home') return 'MY NOTES'
       return routeName || 'MY NOTES'
     })
-    
+
     return {
       pageTitle
     }
@@ -31,18 +32,21 @@ export default {
 </script>
 
 <style scoped>
+/* Header container */
 .header {
   padding: 16px 24px;
   background-color: var(--background-alt);
   border-bottom: 1px solid var(--border);
 }
 
+/* Content layout */
 .header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
+/* Title styling */
 .page-title {
   font-size: 24px;
   font-weight: bold;
@@ -50,6 +54,7 @@ export default {
   white-space: nowrap;
 }
 
+/* Responsive layout adjustments */
 @media screen and (max-width: 768px) {
   .header-content {
     flex-direction: column;

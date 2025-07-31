@@ -2,10 +2,6 @@
   <div class="tags-page">
     <div class="section-header">
       <h2 class="section-title">My Tags</h2>
-      <button class="add-tag-btn" @click="openNewTagForm">
-        <span class="icon">+</span>
-        <span>Add Tag</span>
-      </button>
     </div>
     
     <!-- Search Bar -->
@@ -110,8 +106,8 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, watch, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, onMounted, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { getTags, createTag, updateTag, deleteTag as apiDeleteTag, getNotesByTag, getUserId, searchTags } from '../helpers/api'
 import { generateRandomColor } from '../helpers/utils'
 import TagForm from '../components/TagForm.vue'
@@ -124,8 +120,8 @@ export default {
   },
   setup() {
     const router = useRouter()
-    const route = useRoute()
     
+    // State variables
     const userId = ref(getUserId())
     const tags = ref([])
     const tagNoteCounts = ref({})
@@ -134,13 +130,13 @@ export default {
     const showTagForm = ref(false)
     const currentTag = ref({})
     
-    // Search state
+    // Search functionality state
     const searchQuery = ref('')
     const isSearchActive = ref(false)
     const searchResults = ref([])
     const searchDebounceTimeout = ref(null)
     
-    // Computed filtered tags based on search
+    // Show filtered tags based on search status
     const filteredTags = computed(() => {
       if (isSearchActive.value) {
         return searchResults.value
@@ -148,7 +144,7 @@ export default {
       return tags.value
     })
     
-    // Show success toast
+    // Show success notification toast
     const showSuccessAlert = (message) => {
       Swal.fire({
         title: 'Success!',
@@ -168,7 +164,7 @@ export default {
       })
     }
     
-    // Show error toast
+    // Show error notification toast
     const showErrorAlert = (message) => {
       Swal.fire({
         title: 'Error!',
@@ -187,7 +183,7 @@ export default {
       })
     }
     
-    // Fetch tags from API
+    // Fetch all tags for the current user
     const fetchTags = async () => {
       try {
         isLoading.value = true
@@ -208,7 +204,7 @@ export default {
       }
     }
     
-    // Fetch note counts for all tags
+    // Get count of notes for each tag
     const fetchNoteCountsForTags = async () => {
       // Reset counts
       tagNoteCounts.value = {}
@@ -225,12 +221,12 @@ export default {
       }
     }
     
-    // Navigate to individual tag page
+    // Navigate to tag detail page
     const navigateToTag = (tag) => {
       router.push(`/tags/${tag._id}`)
     }
     
-    // Open form to create a new tag
+    // Create new tag with random color
     const openNewTagForm = () => {
       currentTag.value = {
         name: '',
@@ -240,19 +236,19 @@ export default {
       showTagForm.value = true
     }
     
-    // Open form to edit a tag
+    // Edit existing tag
     const editTag = (tag) => {
       currentTag.value = { ...tag }
       showTagForm.value = true
     }
     
-    // Close the tag form
+    // Close tag form modal
     const closeTagForm = () => {
       showTagForm.value = false
       currentTag.value = {}
     }
     
-    // Save a tag (create or update)
+    // Save tag (create or update)
     const saveTag = async (tagData) => {
       try {
         isLoading.value = true
@@ -289,7 +285,7 @@ export default {
       }
     }
     
-    // Confirm before deleting tag
+    // Show confirmation dialog before deleting tag
     const confirmDeleteTag = (tag) => {
       Swal.fire({
         title: 'Delete Tag',
@@ -306,7 +302,7 @@ export default {
       })
     }
     
-    // Delete a tag
+    // Delete tag and remove from all notes
     const deleteTag = async (tagId) => {
       try {
         isLoading.value = true
@@ -330,7 +326,7 @@ export default {
       }
     }
 
-    // Perform search with debounce
+    // Search tags with debounce to prevent excessive API calls
     const performSearch = () => {
       // Clear previous timeout
       if (searchDebounceTimeout.value) {
@@ -358,14 +354,14 @@ export default {
       }, 300) // 300ms debounce
     }
     
-    // Clear search
+    // Clear search and reset to showing all tags
     const clearSearch = () => {
       searchQuery.value = ''
       isSearchActive.value = false
       searchResults.value = []
     }
     
-    // Watch for changes to tags (after creating, updating, deleting)
+    // Update search results when tags change
     watch(tags, () => {
       // If search is active, refresh search results
       if (isSearchActive.value && searchQuery.value) {
@@ -373,6 +369,7 @@ export default {
       }
     })
     
+    // Fetch tags when component mounts
     onMounted(() => {
       fetchTags()
     })

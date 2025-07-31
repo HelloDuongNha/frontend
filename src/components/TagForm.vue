@@ -78,7 +78,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, watch, inject } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { Chrome } from '@ckpack/vue-color'
 import { generateRandomColor } from '../helpers/utils'
 import { getTags } from '../helpers/api'
@@ -89,6 +89,13 @@ export default {
     Chrome
   },
   props: {
+    /**
+     * Tag object for editing or template for creating new tag
+     * @type {Object}
+     * @property {string} _id - Tag ID (only present when editing)
+     * @property {string} name - Tag name
+     * @property {string} color - Tag color in hex format (#RRGGBB)
+     */
     tag: {
       type: Object,
       default: () => ({
@@ -96,10 +103,16 @@ export default {
         color: generateRandomColor()
       })
     },
+    /**
+     * User ID to associate with the tag
+     */
     userId: {
       type: String,
       required: true
     },
+    /**
+     * Optional array of existing tags for duplicate name checking
+     */
     existingTags: {
       type: Array,
       default: () => []
@@ -107,27 +120,41 @@ export default {
   },
   emits: ['submit', 'cancel'],
   setup(props, { emit }) {
-    // Determine if editing or creating
+    /**
+     * Determines if we're editing an existing tag or creating a new one
+     */
     const isEditing = computed(() => !!props.tag._id)
     
-    // Form data
+    /**
+     * Form data reactive object containing tag properties
+     */
     const formData = reactive({
       name: props.tag.name || '',
       color: props.tag.color || generateRandomColor(),
       userId: props.userId
     })
     
-    // Color picker object value
+    /**
+     * Color picker state object matching the color picker component's expected format
+     */
     const colorPickerValue = ref({
       hex: formData.color,
       rgba: { r: 0, g: 0, b: 0, a: 1 }
     })
     
-    // Store all existing tags and duplicate check
+    /**
+     * Stores all existing tags for duplicate checking
+     */
     const allTags = ref(props.existingTags || [])
+    
+    /**
+     * Flag to indicate if the entered tag name is a duplicate
+     */
     const duplicateTagError = ref(false)
     
-    // Fetch existing tags if not provided
+    /**
+     * Fetches existing tags from the API if not provided as props
+     */
     const fetchExistingTags = async () => {
       try {
         if (props.existingTags.length === 0) {
@@ -139,7 +166,10 @@ export default {
       }
     }
     
-    // Check for duplicate tag name
+    /**
+     * Checks if the current tag name duplicates an existing tag
+     * Skips the current tag when in edit mode
+     */
     const checkForDuplicateName = () => {
       if (!formData.name.trim()) {
         duplicateTagError.value = false
@@ -157,7 +187,9 @@ export default {
       )
     }
     
-    // Predefined color options
+    /**
+     * Predefined color options for quick selection
+     */
     const colorOptions = [
       '#FF6B6B', // red
       '#FF9E7A', // orange
@@ -170,13 +202,18 @@ export default {
       '#BCBCBC', // gray
     ]
     
-    // Form validation
+    /**
+     * Validates that the form data is complete and valid
+     */
     const isFormValid = computed(() => {
       return formData.name.trim() !== '' && 
         /^#[0-9A-Fa-f]{6}$/.test(formData.color)
     })
     
-    // Initialize color picker with the current color
+    /**
+     * Initializes the color picker with the current color
+     * Converts hex to RGB values
+     */
     const initializeColorPicker = () => {
       const hex = formData.color
       
@@ -191,12 +228,18 @@ export default {
       }
     }
     
-    // Update form color when color picker changes
+    /**
+     * Updates the form color when the color picker selection changes
+     * @param {Object} color - Color object from the color picker component
+     */
     const updateColor = (color) => {
       formData.color = color.hex
     }
     
-    // Update color picker when hex input changes
+    /**
+     * Updates the color picker when the hex input field changes
+     * Validates the hex format before updating
+     */
     const updateFromHexInput = () => {
       // Validate hex format
       if (/^#[0-9A-Fa-f]{6}$/.test(formData.color)) {
@@ -214,13 +257,18 @@ export default {
       }
     }
     
-    // Select a predefined color
+    /**
+     * Selects a predefined color and updates both the form and color picker
+     * @param {string} color - Hex color string
+     */
     const selectColor = (color) => {
       formData.color = color
       updateFromHexInput()
     }
     
-    // Submit the form
+    /**
+     * Submits the form if valid, emitting the tag data to the parent component
+     */
     const submitForm = () => {
       if (!isFormValid.value || duplicateTagError.value) return
       
@@ -230,7 +278,9 @@ export default {
       })
     }
     
-    // Cancel and close the form
+    /**
+     * Cancels the form operation and emits the cancel event
+     */
     const cancel = () => {
       emit('cancel')
     }
@@ -264,6 +314,7 @@ export default {
 </script>
 
 <style scoped>
+/* Modal overlay */
 .tag-form-overlay {
   position: fixed;
   top: 0;
@@ -277,6 +328,7 @@ export default {
   z-index: 1000;
 }
 
+/* Modal container */
 .tag-form-container {
   background-color: white;
   border-radius: var(--radius-md);
@@ -287,6 +339,7 @@ export default {
   overflow-y: auto;
 }
 
+/* Modal header */
 .tag-form-header {
   display: flex;
   justify-content: space-between;
@@ -308,6 +361,7 @@ export default {
   color: var(--secondary);
 }
 
+/* Form styling */
 .tag-form {
   padding: 20px;
 }
@@ -338,6 +392,7 @@ export default {
   margin-top: 5px;
 }
 
+/* Color picker and options */
 .color-picker-container {
   display: flex;
   flex-direction: column;
@@ -366,6 +421,7 @@ export default {
   border: 1px solid var(--border);
 }
 
+/* Predefined color options */
 .color-options {
   display: flex;
   flex-wrap: wrap;
@@ -392,6 +448,7 @@ export default {
   box-shadow: 0 0 0 1px var(--border);
 }
 
+/* Form action buttons */
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -423,6 +480,7 @@ export default {
   cursor: not-allowed;
 }
 
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .tag-form-container {
     width: 95%;
