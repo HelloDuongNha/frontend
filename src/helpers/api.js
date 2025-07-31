@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-// const API_URL = 'https://notetaking-1fu7.onrender.com'
-const API_URL = 'http://localhost:3001'
+const API_URL = 'https://notetaking-1fu7.onrender.com'
+// const API_URL = 'http://localhost:3001'
 
 // Create axios instance with error handling and timeout
 const api = axios.create({
@@ -553,7 +553,11 @@ export const updateTag = (id, tagData) => {
 }
 
 export const deleteTag = (id) => {
-  return api.delete(`/api/tags/${id}`);
+  const userId = getUserId();
+  if (!userId) {
+    return Promise.reject(new Error('User ID is required'));
+  }
+  return api.delete(`/api/tags/${id}?userId=${userId}`);
 }
 
 export const getNotesByTag = (tagId, userId = getUserId()) => {

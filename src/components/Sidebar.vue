@@ -131,7 +131,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getTags, createTag, getUserId, logoutUser } from '../helpers/api'
 import { generateRandomColor } from '../helpers/utils'
@@ -146,7 +146,7 @@ export default {
     UserProfileModal
   },
   emits: ['tag-created', 'tag-updated'],
-  setup(props, { emit }) {
+  setup({ emit }) {
     const router = useRouter()
     const route = useRoute()
     
@@ -343,6 +343,9 @@ export default {
           // Refresh the list
           fetchTags()
         }
+        
+        // Dispatch event to refresh tags list in other components
+        window.dispatchEvent(new CustomEvent('refresh-tags-sidebar'))
       } catch (err) {
         console.error('Error creating tag:', err)
         isLoading.value = false
@@ -363,6 +366,14 @@ export default {
     // Initialize component by fetching tags
     onMounted(() => {
       fetchTags()
+      
+      // Listen for global tag refresh events
+      window.addEventListener('refresh-tags-sidebar', fetchTags)
+    })
+    
+    // Clean up event listeners when component is unmounted
+    onUnmounted(() => {
+      window.removeEventListener('refresh-tags-sidebar', fetchTags)
     })
 
     /**

@@ -277,6 +277,9 @@ export default {
         
         // Refresh tags
         await fetchTags()
+        
+        // Dispatch global event to update sidebar
+        window.dispatchEvent(new CustomEvent('refresh-tags-sidebar'))
       } catch (err) {
         console.error('Error saving tag:', err)
         error.value = 'Failed to save tag'
@@ -318,6 +321,9 @@ export default {
         
         // Refresh tags after changes
         await fetchTags()
+        
+        // Dispatch global event to update sidebar
+        window.dispatchEvent(new CustomEvent('refresh-tags-sidebar'))
       } catch (err) {
         console.error('Error deleting tag:', err)
         error.value = 'Failed to delete tag'

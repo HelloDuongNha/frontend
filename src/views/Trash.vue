@@ -607,6 +607,7 @@ export default {
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2; /* Add this standard property */
   -webkit-box-orient: vertical;
 }
 
