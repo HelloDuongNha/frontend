@@ -146,7 +146,7 @@ export default {
     UserProfileModal
   },
   emits: ['tag-created', 'tag-updated'],
-  setup({ emit }) {
+  setup(props,{ emit }) {
     const router = useRouter()
     const route = useRoute()
     
