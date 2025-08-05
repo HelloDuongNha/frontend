@@ -24,9 +24,9 @@ api.interceptors.response.use(
   error => {
     // network error
     if (!error.response) {
-      console.error('Lỗi kết nối:', error.message);
+      console.error('Connection error:', error.message);
       return Promise.reject({
-        message: 'Lỗi kết nối. Vui lòng kiểm tra mạng.'
+        message: 'Connection error. Please check your network.'
       });
     }
     
