@@ -22,13 +22,13 @@ const routes = [
     path: '/auth',
     name: 'Auth',
     component: Auth,
-    meta: { requiresGuest: true } // Only accessible to non-authenticated users
+    meta: { requiresGuest: true } 
   },
   {
     path: '/home',
     name: 'Home',
     component: Home,
-    meta: { requiresAuth: true } // Requires authentication
+    meta: { requiresAuth: true } 
   },
   {
     path: '/tags',
@@ -59,7 +59,7 @@ const routes = [
     path: '/admin/users',
     name: 'AllUsers',
     component: AllUsers,
-    meta: { requiresAuth: true, requiresAdmin: true } // Requires admin privilege
+    meta: { requiresAuth: true, requiresAdmin: true } 
   },
   {
     path: '/admin/users/:id',
@@ -97,9 +97,7 @@ router.beforeEach((to, from, next) => {
     else if (to.matched.some(record => record.meta.requiresAdmin) && !isAdmin) {
       // User is not an admin, redirect to home
       next({ name: 'Home' })
-    }
-    else {
-      // User is authenticated and has proper permissions, proceed
+    } else {
       next()
     }
   } 

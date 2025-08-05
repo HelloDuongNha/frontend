@@ -2,7 +2,7 @@
   <div class="app-container" :class="{ 'auth-mode': isAuthPage }">
     <!-- Only display Sidebar and AppHeader for authenticated users -->
     <template v-if="isAuthenticated && !isAuthPage">
-      <Sidebar @create-note="handleCreateNote" @tag-created="handleTagChange" @tag-updated="handleTagChange" />
+      <Sidebar @create-note="handleCreateNote" @tag-created="handleTagChange"  />
       <main class="main-content">
         <AppHeader />
         <div class="content-area">

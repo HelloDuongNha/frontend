@@ -148,7 +148,6 @@ import {
   initiateRegister,
   verifyAndCompleteRegistration,
   resendOTP,
-  verifyEmail,
   initiateForgotPassword,
   resetPassword,
   isUserLoggedIn
@@ -370,24 +369,6 @@ export default {
         return
       }
       
-      // For reset flow, validate passwords
-      if (otpFlow.value === 'reset') {
-        if (!otpNewPassword.value || !otpNewPasswordConfirm.value) {
-          otpError.value = 'Please enter your new password'
-          return
-        }
-        
-        if (otpNewPassword.value !== otpNewPasswordConfirm.value) {
-          otpError.value = 'Passwords do not match'
-          return
-        }
-        
-        if (otpNewPassword.value.length < 6) {
-          otpError.value = 'Password must be at least 6 characters'
-          return
-        }
-      }
-      
       try {
         isOtpLoading.value = true
         
@@ -409,26 +390,6 @@ export default {
             // Reset form and go to login
             resetForms()
             setActiveForm('login')
-          } else {
-            otpError.value = result.error || 'Verification failed. Please try again.'
-          }
-        } else if (otpFlow.value === 'login') {
-          // Verify email during login
-          result = await verifyEmail(currentUserId.value, otpCode.value)
-          
-          if (result.success) {
-            // Try login again automatically
-            const loginResult = await loginUser(currentEmail.value, loginPassword.value)
-            
-            if (loginResult.success) {
-              showOTPModal.value = false
-              showSuccessAlert(`Welcome back, ${loginResult.user.name || 'User'}!`)
-              router.push('/home')
-            } else {
-              otpError.value = 'Email verified, but login failed. Please try logging in again.'
-              showOTPModal.value = false
-              setActiveForm('login')
-            }
           } else {
             otpError.value = result.error || 'Verification failed. Please try again.'
           }

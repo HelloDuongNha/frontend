@@ -63,7 +63,6 @@
           :note="note"
           :allTags="tags"
           @edit="editNote"
-          @delete="deleteNote"
           @trash="moveNoteToTrash"
           @toggle-done="toggleNoteDoneStatus"
           @click="viewNote(note)"
@@ -92,7 +91,6 @@
           :note="note"
           :allTags="tags"
           @edit="editNote"
-          @delete="deleteNote"
           @trash="moveNoteToTrash"
           @toggle-done="toggleNoteDoneStatus"
           @click="viewNote(note)"
@@ -120,7 +118,6 @@
           :note="note"
           :allTags="tags"
           @edit="editNote"
-          @delete="deleteNote"
           @trash="moveNoteToTrash"
           @toggle-done="toggleNoteDoneStatus"
           @click="viewNote(note)"
@@ -139,6 +136,7 @@
       :userId="userId"
       @submit="saveNote"
       @cancel="closeNoteForm"
+      @tag-created="handleTagCreated"
     />
     
     <!-- View Note Modal -->
@@ -192,7 +190,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getNotes, createNote, updateNote, deleteNote as apiDeleteNote, moveToTrash, getTags, getUserId, toggleNoteDone, searchNotes } from '../helpers/api'
 import { formatDate, formatLocalDatetime } from '../helpers/utils'
 import NoteCard from '../components/NoteCard.vue'
@@ -207,8 +205,7 @@ export default {
     NoteForm,
     TagBadge
   },
-  emits: ['note-created', 'note-updated', 'note-deleted', 'tag-created', 'tag-updated'],
-  setup(props, { emit }) {
+  setup(props) {
     // User authentication ID
     const userId = ref(getUserId())
     
@@ -301,6 +298,10 @@ export default {
       fetchNotes();
       fetchTags();
       
+      window.addEventListener('refresh-tags-sidebar', fetchTags)
+      onUnmounted(() => {
+  window.removeEventListener('refresh-tags-sidebar', fetchTags)
+})
       // Setup global event listeners
       const cleanup = listenForGlobalEvents()
       
@@ -549,8 +550,6 @@ export default {
               await fetchNotes();
               await fetchTags();
               
-              // Send event
-              emit('note-updated', response.data);
             } else {
               throw new Error('Invalid response from server');
             }
@@ -589,9 +588,7 @@ export default {
               // Refresh data
               await fetchNotes();
               await fetchTags();
-              
-              // Send event
-              emit('note-created', response.data);
+
             } else {
               throw new Error('Invalid response from server');
             }
@@ -609,38 +606,13 @@ export default {
       }
     }
     
-    // Delete a note permanently
-    const deleteNote = async (noteId) => {
-      try {
-        isLoading.value = true;
-        error.value = null;
-        
-        await apiDeleteNote(noteId);
-        
-        // Remove from local notes array
-        notes.value = notes.value.filter(n => n._id !== noteId);
-        
-        // Remove from search results if found
-        if (isSearchActive.value) {
-          searchResults.value = searchResults.value.filter(n => n._id !== noteId);
-        }
-        
-        isLoading.value = false;
-        showSuccessAlert('Note deleted successfully!');
-        
-        // Refresh notes and tags
-        await Promise.all([fetchNotes(), fetchTags()]);
-        
-        // Emit delete event
-        emit('note-deleted', noteId);
-      } catch (err) {
-        console.error('Error deleting note:', err);
-        error.value = 'Failed to delete note';
-        isLoading.value = false;
-        showErrorAlert('Failed to delete note. Please try again.');
-      }
-    }
     
+    // Sau dòng 211 (trong setup)
+    const handleTagCreated = () => {
+      // Phát sự kiện toàn cục để Sidebar lắng nghe và tự fetch lại tags
+      window.dispatchEvent(new CustomEvent('refresh-tags-sidebar'));
+    }
+
     // Move a note to trash (soft delete)
     const moveNoteToTrash = async (noteId) => {
       try {
@@ -662,9 +634,7 @@ export default {
         
         // Refresh notes and tags
         await Promise.all([fetchNotes(), fetchTags()]);
-        
-        // Emit event
-        emit('note-deleted', noteId);
+
       } catch (err) {
         console.error('Error moving note to trash:', err);
         error.value = 'Failed to move note to trash';
@@ -824,7 +794,6 @@ export default {
       formatLocalDatetime,
       openNewNoteForm,
       editNote,
-      deleteNote,
       saveNote,
       closeNoteForm,
       viewNote,
@@ -844,7 +813,8 @@ export default {
       isSearchActive,
       performSearch,
       clearSearch,
-      truncateContent
+      truncateContent,
+      handleTagCreated
     }
   }
 }

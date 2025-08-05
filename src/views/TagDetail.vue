@@ -189,7 +189,7 @@ export default {
       
       try {
         // Ensure we have a valid userId
-        const currentUserId = userId.value || '68808487bde0ccb4804aa6a6';
+        const currentUserId = userId.value ;
         
         // Fetch tag details
         const tagResponse = await getTagById(tagId)

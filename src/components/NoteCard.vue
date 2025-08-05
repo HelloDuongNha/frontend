@@ -64,7 +64,7 @@ export default {
       default: false
     }
   },
-  emits: ['edit', 'delete', 'trash', 'toggle-done'],
+  emits: ['edit', 'trash', 'toggle-done'],
   setup(props, { emit }) {
     // Controls the visibility of action menu
     const showActions = ref(false)

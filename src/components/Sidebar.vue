@@ -145,7 +145,7 @@ export default {
     TagForm,
     UserProfileModal
   },
-  emits: ['tag-created', 'tag-updated'],
+  emits: ['tag-created', 'create-note'],
   setup(props,{ emit }) {
     const router = useRouter()
     const route = useRoute()
@@ -261,7 +261,6 @@ export default {
     
     /**
      * Handle creating a new note or tag from the add menu
-     * @param {string} type - The type of item to create ('note' or 'tag')
      */
     const createNew = (type) => {
       showAddOptions.value = false

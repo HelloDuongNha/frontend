@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-const API_URL = 'https://notetaking-1fu7.onrender.com'
-// const API_URL = 'http://localhost:3001'
+// const API_URL = 'https://notetaking-1fu7.onrender.com'
+const API_URL = 'http://localhost:3001'
 
 // Create axios instance with error handling and timeout
 const api = axios.create({
@@ -16,49 +16,25 @@ const api = axios.create({
   }
 })
 
-// Add response interceptor to handle common error patterns
+// Interceptor 
 api.interceptors.response.use(
   response => {
-    // Ensure the response data always has a consistent format
-    if (!response.data) {
-      response.data = {}; // Always provide a data object
-    }
     return response;
   },
   error => {
-    // Handle connection/timeout errors
-    if (error.code === 'ECONNABORTED' || !error.response) {
-      console.error('Network Error or Timeout:', error.message);
-      // Return a custom error for frontend handling
+    // network error
+    if (!error.response) {
+      console.error('Lỗi kết nối:', error.message);
       return Promise.reject({
-        isNetworkError: true,
-        message: 'Connection failed. Please check your network.'
+        message: 'Lỗi kết nối. Vui lòng kiểm tra mạng.'
       });
     }
     
-    // Handle specific error cases if needed
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('API Error Response:', error.response.status, error.response.data);
-      
-      // Format errors for better display in the frontend
-      const errorMessage = 
-        (typeof error.response.data === 'string') ? error.response.data : 
-        (error.response.data && error.response.data.message) ? error.response.data.message :
-        `Error ${error.response.status}: ${error.message}`;
-      
-      return Promise.reject({
-        status: error.response.status,
-        message: errorMessage,
-        data: error.response.data
-      });
-    } 
-    
-    // Other errors
-    console.error('API Error:', error.message);
+    // server error
+    console.error('Lỗi API:', error.response.status);
     return Promise.reject({
-      message: error.message
+      status: error.response.status,
+      message: error.response.data?.message || error.message
     });
   }
 );
@@ -68,7 +44,7 @@ export const loginUser = async (email, password) => {
   try {
     const response = await api.post('/api/users/login', {
       email,
-      passwordHash: password // Note: In production, we should hash this client-side
+      passwordHash: password 
     });
     
     // Check if the user needs to verify email first
@@ -172,30 +148,6 @@ export const resendOTP = async (userId) => {
   }
 };
 
-// Verify email with OTP
-export const verifyEmail = async (userId, otp) => {
-  try {
-    const response = await api.post('/api/users/verify-email', {
-      userId,
-      otp
-    });
-    
-    if (response.data && response.data.user) {
-      return {
-        success: true,
-        user: response.data.user
-      };
-    } else {
-      throw new Error('Invalid response format from server');
-    }
-  } catch (error) {
-    console.error('Email verification error:', error);
-    return {
-      success: false,
-      error: error.message || 'Failed to verify email'
-    };
-  }
-};
 
 // Initiate forgot password
 export const initiateForgotPassword = async (email) => {
@@ -427,7 +379,7 @@ export const getNotes = (userId = getUserId()) => {
   return api.get(`/api/notes/user?userId=${userId}`)
     .catch(err => {
       console.error('Error fetching notes:', err);
-      // Return empty array to avoid UI crashes
+      // avoid UI crashes
       return { data: [] };
     });
 }

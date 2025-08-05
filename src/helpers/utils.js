@@ -1,7 +1,6 @@
 /**
  * Format a date to display in a human-readable format
- * @param {string|Date} date - The date to format
- * @returns {string} Formatted date string
+
  */
 export const formatDate = (date) => {
   if (!date) return ''
@@ -15,8 +14,6 @@ export const formatDate = (date) => {
 
 /**
  * Format a date to display in DD/MM/YYYY format
- * @param {string|Date} date - The date to format
- * @returns {string} Formatted date string in DD/MM/YYYY format
  */
 export const formatLocalDate = (date) => {
   if (!date) return ''
@@ -26,8 +23,6 @@ export const formatLocalDate = (date) => {
 
 /**
  * Format a date and time in HH:mm DD/MM/YYYY format
- * @param {string|Date} date - The date to format
- * @returns {string} Formatted datetime string
  */
 export const formatLocalDatetime = (date) => {
   if (!date) return ''
@@ -42,8 +37,6 @@ export const formatLocalDatetime = (date) => {
 
 /**
  * Format a time to display in a human-readable format
- * @param {string|Date} date - The date to extract time from
- * @returns {string} Formatted time string
  */
 export const formatTime = (date) => {
   if (!date) return ''
@@ -56,8 +49,6 @@ export const formatTime = (date) => {
 
 /**
  * Format a date to display as relative time (Today, Yesterday, etc)
- * @param {string|Date} date - The date to format
- * @returns {string} Relative time string
  */
 export const getRelativeTime = (date) => {
   if (!date) return ''
@@ -78,9 +69,6 @@ export const getRelativeTime = (date) => {
 
 /**
  * Truncate text if it exceeds a certain length
- * @param {string} text - The text to truncate
- * @param {number} maxLength - Maximum length before truncation
- * @returns {string} Truncated text
  */
 export const truncateText = (text, maxLength = 100) => {
   if (!text || text.length <= maxLength) return text
@@ -89,7 +77,6 @@ export const truncateText = (text, maxLength = 100) => {
 
 /**
  * Generate a random color for tags
- * @returns {string} HEX color code
  */
 export const generateRandomColor = () => {
   // Pastel colors for tags

@@ -52,6 +52,7 @@
           :key="note.id"
           :note="note"
           :allTags="tags"
+          @edit="editNote"
         />
       </div>
     </div>
@@ -200,8 +201,8 @@ export default {
     // Check if a day is currently selected
     const isSelectedDay = (day) => {
       return selectedDay.value && 
-             day.date === selectedDay.value.date && 
-             day.currentMonth === selectedDay.value.currentMonth
+            day.date === selectedDay.value.date && 
+            day.currentMonth === selectedDay.value.currentMonth
     }
     
     // Fetch notes from API or use fallback data
