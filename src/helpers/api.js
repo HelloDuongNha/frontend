@@ -31,7 +31,7 @@ api.interceptors.response.use(
     }
     
     // server error
-    console.error('Lỗi API:', error.response.status);
+    console.error('API error:', error.response.status);
     return Promise.reject({
       status: error.response.status,
       message: error.response.data?.message || error.message
