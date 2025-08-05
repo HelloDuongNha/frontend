@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-// const API_URL = 'https://notetaking-1fu7.onrender.com'
-const API_URL = 'http://localhost:3001'
+const API_URL = 'https://notetaking-1fu7.onrender.com'
+// const API_URL = 'http://localhost:3001'
 
 // Create axios instance with error handling and timeout
 const api = axios.create({

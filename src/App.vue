@@ -49,19 +49,14 @@ export default {
     // Navigate to home and trigger note creation form
     const handleCreateNote = () => {
       router.push('/home')
-      // Note: In a real implementation, would use state management to trigger the note form
     }
     
     // Handle note creation, update, or deletion events
     const handleNoteChange = () => {
-      // This handler receives events from child components
-      // Could implement global state updates or notifications here
     }
     
     // Handle tag creation, update, or deletion events
     const handleTagChange = () => {
-      // This handler receives events from child components
-      // Could implement global tag refresh across components
     }
     
     return {
